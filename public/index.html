@@ -25,6 +25,7 @@
         .tab-content.active { display: flex; }
         .editable-content { width: 100%; height: 100%; resize: none; border: none; padding: 0; font-size: 1em; font-family: var(--font-family); }
         .editable-content:focus { outline: none; box-shadow: none; }
+        /* 任务3：主持人汤面输入框字号稍小 */
         #question-input { font-size: 0.95em; }
         .game-result-buttons { margin-top: 15px; display: flex; gap: 10px; }
         .result-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; color: white; font-size: 1em; cursor: pointer; transition: opacity var(--transition-speed); }
@@ -51,15 +52,24 @@
         .clue-item { display: flex; align-items: center; padding: 12px; border-bottom: 1px solid var(--color-border); transition: background-color var(--transition-speed); }
         .clue-item.highlighted { background-color: var(--color-highlight); font-weight: bold; }
         .clue-text { flex-grow: 1; line-height: 1.5; }
+        /* 任务2：美化线索列表的图标 */
         .clue-actions button { background: none; border: none; cursor: pointer; margin-left: 8px; display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 50%;}
         .clue-icon { width: 18px; height: 18px; fill: var(--color-text-light); transition: all var(--transition-speed); }
         .clue-actions button:hover .clue-icon { transform: scale(1.2); }
         .highlight-btn:hover .clue-icon { fill: var(--color-primary); }
         .delete-btn:hover .clue-icon { fill: var(--color-fail); }
         .hidden { display: none !important; } .fade-out { opacity: 0; pointer-events: none; }
+
+        /* 任务1：手机竖屏适配 */
         @media (max-width: 768px) {
-            body { overflow: auto; }
-            .game-container { grid-template-columns: 1fr; height: auto; min-height: 100vh; padding: 10px; gap: 10px; }
+            body { overflow: auto; } /* 允许页面滚动 */
+            .game-container {
+                grid-template-columns: 1fr; /* 变为单栏 */
+                height: auto;
+                min-height: 100vh;
+                padding: 10px;
+                gap: 10px;
+            }
             .panel { padding: 15px; }
             #role-selection h1 { font-size: 2.2em; }
             .role-buttons { display: flex; flex-direction: column; gap: 20px; }
@@ -69,4 +79,4 @@
 <body>
     <div id="role-selection"><h1>海龟汤在线小屋</h1><div class="role-buttons"><button id="host-btn" class="role-btn">我是主持人</button><button id="player-btn" class="role-btn">我是玩家</button></div></div>
     <div id="host-view" class="game-container"><div class="panel"><div class="tab-nav"><button class="tab-btn active" onclick="switchTab('host', 'question')">海龟汤题目</button><button class="tab-btn" onclick="switchTab('host', 'manual')">主持人手册</button></div><div class="tab-content-container"><div id="host-question-content" class="tab-content active"><textarea id="question-input" class="editable-content" placeholder="在此输入“汤面”，将实时同步给玩家..."></textarea></div><div id="host-manual-content" class="tab-content"><textarea id="manual-input" class="editable-content" placeholder="在此输入“汤底”，仅自己可见..."></textarea></div></div><div class="game-result-buttons"><button id="btn-success" class="result-btn">喝汤成功</button><button id="btn-fail" class="result-btn">喝汤失败</button><button id="btn-reset" class="result-btn hidden">重置游戏</button></div></div><div class="panel"><h3 class="panel-title">信息互动区</h3><div id="host-message-area" class="message-area"></div><div class="panel-footer"><div class="quick-reply-buttons"><button class="quick-reply-btn" onclick="quickReply('是')">是</button><button class="quick-reply-btn" onclick="quickReply('不是')">不是</button><button class="quick-reply-btn" onclick="quickReply('是也不是')">是也不是</button></div><div class="input-area"><input type="text" id="host-message-input" class="message-input" placeholder="输入自定义回复..."><button id="host-send-btn" class="send-btn">发送</button></div></div></div><div class="panel"><h3 class="panel-title">线索列表</h3><ul id="host-clue-list" class="clue-list"></ul></div></div>
-    <div id="player-view" class="game-container"><div class="panel"><h3 class="panel-title">海龟汤题目</h3><div id="player-question-display" style="font-size: 1.1em; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; flex-grow: 1;">主持人尚未出题...</div></div><div class="panel"><h3 class="panel-title">提问区</h3><div id="player-message-area" class="message-area"></div><div class="panel-footer"><div class="input-area"><input type="text" id="player-message-input" class="message-input" placeholder="向主持人提问..."><button id="player-send-btn" class="send-btn">发送</button></div></div></div><div class="panel"><h3 class="panel-title">线索列表</h3><ul id="pl
+    <div id="player-view" class="game-container"><div class="panel"><h3 class="panel-title">海龟汤题目</h3><div id="player-question-display" style="font-size: 1.1em; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; flex-grow: 1;">主持人尚未出题...</div></div><div class="panel"><h3 class="panel-title">提问区</h3><div id="player-message-area" class="message-area"></div><div class="panel-footer"><div class="input-area"><input type="text" id="play
