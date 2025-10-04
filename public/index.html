@@ -1,107 +1,31 @@
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    // --- 客户端 Socket.IO 初始化 ---
-    // 确保这里的URL是你自己的，并且被引号包裹
-    const SERVER_URL = "https://hgtang.onrender.com";
-    const socket = io(SERVER_URL);
-    let myRole = null; // 'host' or 'player'
-
-    // --- DOM 元素获取 (与之前相同) ---
-    const roleSelectionView = document.getElementById('role-selection');
-    const hostView = document.getElementById('host-view');
-    const playerView = document.getElementById('player-view');
-    const questionInput = document.getElementById('question-input');
-    const hostMessageArea = document.getElementById('host-message-area');
-    const hostMessageInput = document.getElementById('host-message-input');
-    const hostClueList = document.getElementById('host-clue-list');
-    const btnSuccess = document.getElementById('btn-success');
-    const btnFail = document.getElementById('btn-fail');
-    const btnReset = document.getElementById('btn-reset');
-    const playerQuestionDisplay = document.getElementById('player-question-display');
-    const playerMessageArea = document.getElementById('player-message-area');
-    const playerMessageInput = document.getElementById('player-message-input');
-    const playerClueList = document.getElementById('player-clue-list');
-
-    // --- 本地渲染函数 (只负责画界面) ---
-    function renderClues(clues) {
-        hostClueList.innerHTML = '';
-        playerClueList.innerHTML = '';
-        clues.forEach(clue => {
-            const hostLi = document.createElement('li');
-            hostLi.className = `clue-item ${clue.highlighted ? 'highlighted' : ''}`;
-            hostLi.innerHTML = `<span class="clue-text">${clue.text}</span><div class="clue-actions"><button class="highlight-btn" title="着重" onclick="toggleHighlightClue('${clue.id}')">⭐</button><button class="delete-btn" title="删除" onclick="deleteClue('${clue.id}')">🗑️</button></div>`;
-            hostClueList.appendChild(hostLi);
-            const playerLi = document.createElement('li');
-            playerLi.className = `clue-item ${clue.highlighted ? 'highlighted' : ''}`;
-            playerLi.innerHTML = `<span class="clue-text">${clue.text}</span>`;
-            playerClueList.appendChild(playerLi);
-        });
-    }
-
-    function createMessageElement(data) {
-        const { text, sender, role } = data;
-        const className = role === 'host' ? 'host-msg' : 'player-msg';
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('message', className);
-        const senderSpan = document.createElement('div');
-        senderSpan.classList.add('message-sender');
-        senderSpan.textContent = sender;
-        msgDiv.appendChild(senderSpan);
-        msgDiv.appendChild(document.createTextNode(text));
-        return msgDiv;
-    }
-
-    function appendLocalMessage(data) {
-        const hostMsgDiv = createMessageElement(data);
-        if (myRole === 'host' && data.role === 'player') {
-            hostMsgDiv.title = '点击加入线索列表';
-            hostMsgDiv.onclick = () => addClue(data.text);
-        }
-        hostMessageArea.appendChild(hostMsgDiv);
-        hostMessageArea.scrollTop = hostMessageArea.scrollHeight;
-        const playerMsgDiv = createMessageElement(data);
-        playerMessageArea.appendChild(playerMsgDiv);
-        playerMessageArea.scrollTop = playerMessageArea.scrollHeight;
-    }
-
-    // --- 事件发射器 (将操作发送到服务器) ---
-    function selectRole(role) { socket.emit('selectRole', role); }
-    function sendMessage(senderRole) { const input = senderRole === 'host' ? hostMessageInput : playerMessageInput; const text = input.value.trim(); if (!text) return; const senderName = senderRole === 'host' ? '主持人' : '玩家'; socket.emit('sendMessage', { text, sender: senderName, role: senderRole }); input.value = ''; }
-    function quickReply(text) { socket.emit('sendMessage', { text, sender: '主持人', role: 'host' }); }
-    function addClue(text) { socket.emit('addClue', text); }
-    function deleteClue(clueId) { socket.emit('deleteClue', clueId); }
-    function toggleHighlightClue(clueId) { socket.emit('toggleHighlightClue', clueId); }
-    function announceResult(result) { socket.emit('announceResult', result); }
-    function resetGame() { socket.emit('resetGame'); }
-
-    // --- Socket.IO 事件监听器 (接收服务器的更新) ---
-    socket.on('roleConfirmed', (role) => { myRole = role; roleSelectionView.classList.add('fade-out'); setTimeout(() => { roleSelectionView.style.display = 'none'; if (myRole === 'host') hostView.style.display = 'grid'; else playerView.style.display = 'grid'; }, 500); });
-    socket.on('gameStateSync', (state) => { playerQuestionDisplay.textContent = state.question; questionInput.value = state.question; renderClues(state.clues); });
-    socket.on('questionUpdated', (question) => { playerQuestionDisplay.textContent = question; questionInput.value = question; });
-    socket.on('newMessage', (data) => { appendLocalMessage(data); });
-    socket.on('cluesUpdated', (clues) => { renderClues(clues); });
-    socket.on('resultAnnounced', (result) => { const resultText = `--- 游戏结束，主持人宣布：喝汤${result}！ ---`; const className = result === '成功' ? 'success' : 'fail'; const systemMsg = document.createElement('div'); systemMsg.className = `system-message ${className}`; systemMsg.textContent = resultText; hostMessageArea.appendChild(systemMsg.cloneNode(true)); playerMessageArea.appendChild(systemMsg.cloneNode(true)); hostMessageArea.scrollTop = hostMessageArea.scrollHeight; playerMessageArea.scrollTop = playerMessageArea.scrollHeight; btnSuccess.classList.add('hidden'); btnFail.classList.add('hidden'); btnReset.classList.remove('hidden'); });
-    socket.on('gameReset', () => { hostMessageArea.innerHTML = ''; playerMessageArea.innerHTML = ''; hostClueList.innerHTML = ''; playerClueList.innerHTML = ''; questionInput.value = ''; playerQuestionDisplay.textContent = '主持人尚未出题...'; btnSuccess.classList.remove('hidden'); btnFail.classList.remove('hidden'); btnReset.classList.add('hidden'); hostView.style.display = 'none'; playerView.style.display = 'none'; roleSelectionView.style.display = 'flex'; setTimeout(() => roleSelectionView.classList.remove('fade-out'), 50); });
-    
-    // --- 原有事件监听器绑定 ---
-    document.getElementById('host-btn').addEventListener('click', () => selectRole('host'));
-    document.getElementById('player-btn').addEventListener('click', () => selectRole('player'));
-    questionInput.addEventListener('input', (e) => socket.emit('updateQuestion', e.target.value));
-    btnSuccess.addEventListener('click', () => announceResult('成功'));
-    btnFail.addEventListener('click', () => announceResult('失败'));
-    btnReset.addEventListener('click', resetGame);
-    document.getElementById('host-send-btn').addEventListener('click', () => sendMessage('host'));
-    document.getElementById('player-send-btn').addEventListener('click', () => sendMessage('player'));
-    hostMessageInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage('host'); });
-    playerMessageInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage('player'); });
-    function switchTab(view, tabName) { const tabs = document.querySelectorAll(`#${view}-view .tab-btn`); const contents = document.querySelectorAll(`#${view}-view .tab-content`); tabs.forEach(tab => tab.classList.remove('active')); contents.forEach(content => content.classList.remove('active')); document.querySelector(`#${view}-view .tab-btn[onclick*="'${tabName}'"]`).classList.add('active'); document.getElementById(`${view}-${tabName}-content`).classList.add('active'); }
-
-    // 添加 Eruda 调试工具
-    document.write('<script src="//cdn.jsdelivr.net/npm/eruda"><\/script>');
-    document.addEventListener('DOMContentLoaded', function () {
-        eruda.init();
-    });
-</script>        .game-result-buttons { margin-top: 15px; display: flex; gap: 10px; }
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海龟汤在线小屋</title>
+    <style>
+        :root { --color-bg: #f4f3f1; --color-primary: #a7b2c3; --color-secondary: #d3c4be; --color-text: #5a5a5a; --color-text-light: #888; --color-border: #e0e0e0; --color-highlight: #f5e6d3; --color-success: #8dbba2; --color-fail: #e09a9a; --color-reset: #a7b2c3; --font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; --border-radius: 12px; --transition-speed: 0.3s; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: var(--font-family); background-color: var(--color-bg); color: var(--color-text); overflow: hidden; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: #aaa; }
+        #role-selection { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, var(--color-secondary), var(--color-primary)); transition: opacity 0.5s ease-out; }
+        #role-selection h1 { color: white; font-size: 2.8em; font-weight: 300; letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+        .role-buttons { margin-top: 40px; }
+        .role-btn { padding: 15px 35px; margin: 0 20px; font-size: 1.2em; border-radius: 50px; border: none; cursor: pointer; background-color: rgba(255, 255, 255, 0.9); color: var(--color-primary); font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: all var(--transition-speed) ease; }
+        .role-btn:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.2); background-color: white; }
+        .game-container { display: none; grid-template-columns: 3fr 5fr 3fr; height: 100vh; gap: 15px; padding: 15px; box-sizing: border-box; }
+        .panel { background-color: white; border-radius: var(--border-radius); box-shadow: 0 4px 12px rgba(0,0,0,0.06); padding: 20px 25px; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; }
+        .panel-title { margin-top: 0; margin-bottom: 15px; color: var(--color-primary); border-bottom: 1px solid var(--color-border); padding-bottom: 10px; font-weight: 500; }
+        .tab-nav { display: flex; }
+        .tab-btn { flex: 1; padding: 12px; border: 1px solid var(--color-border); background-color: var(--color-bg); cursor: pointer; transition: all var(--transition-speed); border-bottom: none; border-radius: 8px 8px 0 0; margin-right: 4px; font-size: 0.95em; }
+        .tab-btn:last-child { margin-right: 0; }
+        .tab-btn.active { background-color: white; font-weight: 600; color: var(--color-primary); margin-bottom: -1px; }
+        .tab-content-container { flex-grow: 1; border: 1px solid var(--color-border); border-radius: 0 0 8px 8px; position: relative; background-color: white; display: flex; }
+        .tab-content { display: none; width: 100%; height: 100%; padding: 15px; box-sizing: border-box; }
+        .tab-content.active { display: flex; }
+        .editable-content { width: 100%; height: 100%; resize: none; border: none; padding: 0; font-size: 1em; font-family: var(--font-family); }
+        .editable-content:focus { outline: none; box-shadow: none; }
+        .game-result-buttons { margin-top: 15px; display: flex; gap: 10px; }
         .result-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; color: white; font-size: 1em; cursor: pointer; transition: opacity var(--transition-speed); }
         .result-btn:hover { opacity: 0.85; }
         #btn-success { background-color: var(--color-success); } #btn-fail { background-color: var(--color-fail); } #btn-reset { background-color: var(--color-reset); }
@@ -133,13 +57,12 @@
     </style>
 </head>
 <body>
-    <!-- HTML Body部分 -->
     <div id="role-selection"><h1>海龟汤在线小屋</h1><div class="role-buttons"><button id="host-btn" class="role-btn">我是主持人</button><button id="player-btn" class="role-btn">我是玩家</button></div></div>
     <div id="host-view" class="game-container"><div class="panel"><div class="tab-nav"><button class="tab-btn active" onclick="switchTab('host', 'question')">海龟汤题目</button><button class="tab-btn" onclick="switchTab('host', 'manual')">主持人手册</button></div><div class="tab-content-container"><div id="host-question-content" class="tab-content active"><textarea id="question-input" class="editable-content" placeholder="在此输入“汤面”，将实时同步给玩家..."></textarea></div><div id="host-manual-content" class="tab-content"><textarea id="manual-input" class="editable-content" placeholder="在此输入“汤底”，仅自己可见..."></textarea></div></div><div class="game-result-buttons"><button id="btn-success" class="result-btn">喝汤成功</button><button id="btn-fail" class="result-btn">喝汤失败</button><button id="btn-reset" class="result-btn hidden">重置游戏</button></div></div><div class="panel"><h3 class="panel-title">信息互动区</h3><div id="host-message-area" class="message-area"></div><div class="panel-footer"><div class="quick-reply-buttons"><button class="quick-reply-btn" onclick="quickReply('是')">是</button><button class="quick-reply-btn" onclick="quickReply('不是')">不是</button><button class="quick-reply-btn" onclick="quickReply('是也不是')">是也不是</button></div><div class="input-area"><input type="text" id="host-message-input" class="message-input" placeholder="输入自定义回复..."><button id="host-send-btn" class="send-btn">发送</button></div></div></div><div class="panel"><h3 class="panel-title">线索列表</h3><ul id="host-clue-list" class="clue-list"></ul></div></div>
     <div id="player-view" class="game-container"><div class="panel"><h3 class="panel-title">海龟汤题目</h3><div id="player-question-display" style="font-size: 1.1em; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; flex-grow: 1;">主持人尚未出题...</div></div><div class="panel"><h3 class="panel-title">提问区</h3><div id="player-message-area" class="message-area"></div><div class="panel-footer"><div class="input-area"><input type="text" id="player-message-input" class="message-input" placeholder="向主持人提问..."><button id="player-send-btn" class="send-btn">发送</button></div></div></div><div class="panel"><h3 class="panel-title">线索列表</h3><ul id="player-clue-list" class="clue-list"></ul></div></div>
     
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        // 这里粘贴之前最终版的全部客户端JavaScript代码
-        const socket = io("https://hgtang.onrender.com"); let myRole = null;
-        const roleSelectionView = document.getElementById('role-selection'); const hostView = document.getElementById('host-view'); const playerView = document.getElementById('player-view'); const questionInput = document.getElementById('
+        const socket = io("https://hgtang.onrender.com", { transports: ["websocket"] });
+        let myRole = null;
+        const roleSelectionView = document.getElementById('role-selection'); const hostView = document.getElementById('host-view'); const playerView = document.getElementById('player-view'); const questionInput = document.getElementById('question-input'); const hostMessageArea = document.getElementById('host-message-area'); const ho
