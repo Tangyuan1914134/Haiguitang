@@ -4,7 +4,12 @@ const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "*", // 允许来自任何源的连接
+    methods: ["GET", "POST"] // 允许的请求方法
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 
