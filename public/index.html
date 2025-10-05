@@ -56,6 +56,9 @@
         .clue-actions button:hover .clue-icon { transform: scale(1.2); }
         .highlight-btn:hover .clue-icon { fill: var(--color-primary); }
         .delete-btn:hover .clue-icon { fill: var(--color-fail); }
+        .download-btn { width: 100%; padding: 12px; margin-top: 15px; border: 1px solid var(--color-primary); background-color: transparent; color: var(--color-primary); border-radius: 8px; cursor: pointer; transition: all var(--transition-speed); }
+        .download-btn:hover:not(:disabled) { background-color: var(--color-primary); color: white; }
+        .download-btn:disabled { cursor: not-allowed; opacity: 0.5; }
         .hidden { display: none !important; } .fade-out { opacity: 0; pointer-events: none; }
         @media (max-width: 768px) {
             body { overflow: auto; }
@@ -68,14 +71,15 @@
 </head>
 <body>
     <div id="role-selection"><h1>海龟汤在线小屋</h1><div class="role-buttons"><button id="host-btn" class="role-btn">我是主持人</button><button id="player-btn" class="role-btn">我是玩家</button></div></div>
-    <div id="host-view" class="game-container"><div class="panel"><div class="tab-nav"><button class="tab-btn active" onclick="switchTab('host', 'question')">海龟汤题目</button><button class="tab-btn" onclick="switchTab('host', 'manual')">主持人手册</button></div><div class="tab-content-container"><div id="host-question-content" class="tab-content active"><textarea id="question-input" class="editable-content" placeholder="在此输入“汤面”，将实时同步给玩家..."></textarea></div><div id="host-manual-content" class="tab-content"><textarea id="manual-input" class="editable-content" placeholder="在此输入“汤底”，仅自己可见..."></textarea></div></div><div class="game-result-buttons"><button id="btn-success" class="result-btn">喝汤成功</button><button id="btn-fail" class="result-btn">喝汤失败</button><button id="btn-reset" class="result-btn hidden">重置游戏</button></div></div><div class="panel"><h3 class="panel-title">信息互动区</h3><div id="host-message-area" class="message-area"></div><div class="panel-footer"><div class="quick-reply-buttons"><button class="quick-reply-btn" onclick="quickReply('是')">是</button><button class="quick-reply-btn" onclick="quickReply('不是')">不是</button><button class="quick-reply-btn" onclick="quickReply('是也不是')">是也不是</button></div><div class="input-area"><input type="text" id="host-message-input" class="message-input" placeholder="输入自定义回复..."><button id="host-send-btn" class="send-btn">发送</button></div></div></div><div class="panel"><h3 class="panel-title">线索列表</h3><ul id="host-clue-list" class="clue-list"></ul></div></div>
-    <div id="player-view" class="game-container"><div class="panel"><h3 class="panel-title">海龟汤题目</h3><div id="player-question-display" style="font-size: 1.1em; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; flex-grow: 1;">主持人尚未出题...</div></div><div class="panel"><h3 class="panel-title">提问区</h3><div id="player-message-area" class="message-area"></div><div class="panel-footer"><div class="input-area"><input type="text" id="player-message-input" class="message-input" placeholder="向主持人提问..."><button id="player-send-btn" class="send-btn">发送</button></div></div></div><div class="panel"><h3 class="panel-title">线索列表</h3><ul id="player-clue-list" class="clue-list"></ul></div></div>
+    <div id="host-view" class="game-container"><div class="panel"><div class="tab-nav"><button class="tab-btn active" onclick="switchTab('host', 'question')">海龟汤题目</button><button class="tab-btn" onclick="switchTab('host', 'manual')">主持人手册</button></div><div class="tab-content-container"><div id="host-question-content" class="tab-content active"><textarea id="question-input" class="editable-content" placeholder="在此输入“汤面”，将实时同步给玩家..."></textarea></div><div id="host-manual-content" class="tab-content"><textarea id="manual-input" class="editable-content" placeholder="在此输入“汤底”，仅自己可见..."></textarea></div></div><div class="game-result-buttons"><button id="btn-success" class="result-btn">喝汤成功</button><button id="btn-fail" class="result-btn">喝汤失败</button><button id="btn-reset" class="result-btn hidden">重置游戏</button></div></div><div class="panel"><h3 class="panel-title">信息互动区</h3><div id="host-message-area" class="message-area"></div><div class="panel-footer"><div class="quick-reply-buttons"><button class="quick-reply-btn" onclick="quickReply('是')">是</button><button class="quick-reply-btn" onclick="quickReply('不是')">不是</button><button class="quick-reply-btn" onclick="quickReply('是也不是')">是也不是</button></div><div class="input-area"><input type="text" id="host-message-input" class="message-input" placeholder="输入自定义回复..."><button id="host-send-btn" class="send-btn">发送</button></div></div></div><div class="panel"><h3 class="panel-title">线索列表</h3><ul id="host-clue-list" class="clue-list"></ul><button id="host-download-btn" class="download-btn" disabled>下载本局复盘</button></div></div>
+    <div id="player-view" class="game-container"><div class="panel"><h3 class="panel-title">海龟汤题目</h3><div id="player-question-display" style="font-size: 1.1em; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; flex-grow: 1;">主持人尚未出题...</div></div><div class="panel"><h3 class="panel-title">提问区</h3><div id="player-message-area" class="message-area"></div><div class="panel-footer"><div class="input-area"><input type="text" id="player-message-input" class="message-input" placeholder="向主持人提问..."><button id="player-send-btn" class="send-btn">发送</button></div></div></div><div class="panel"><h3 class="panel-title">线索列表</h3><ul id="player-clue-list" class="clue-list"></ul><button id="player-download-btn" class="download-btn" disabled>下载本局复盘</button></div></div>
     
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io("https://hgtang.onrender.com", { transports: ["websocket"] });
         let myRole = null;
-        const roleSelectionView = document.getElementById('role-selection'); const hostView = document.getElementById('host-view'); const playerView = document.getElementById('player-view'); const questionInput = document.getElementById('question-input'); const hostMessageArea = document.getElementById('host-message-area'); const hostMessageInput = document.getElementById('host-message-input'); const hostClueList = document.getElementById('host-clue-list'); const btnSuccess = document.getElementById('btn-success'); const btnFail = document.getElementById('btn-fail'); const btnReset = document.getElementById('btn-reset'); const playerQuestionDisplay = document.getElementById('player-question-display'); const playerMessageArea = document.getElementById('player-message-area'); const playerMessageInput = document.getElementById('player-message-input'); const playerClueList = document.getElementById('player-clue-list');
+        const roleSelectionView = document.getElementById('role-selection'); const hostView = document.getElementById('host-view'); const playerView = document.getElementById('player-view'); const questionInput = document.getElementById('question-input'); const manualInput = document.getElementById('manual-input'); const hostMessageArea = document.getElementById('host-message-area'); const hostMessageInput = document.getElementById('host-message-input'); const hostClueList = document.getElementById('host-clue-list'); const btnSuccess = document.getElementById('btn-success'); const btnFail = document.getElementById('btn-fail'); const btnReset = document.getElementById('btn-reset'); const playerQuestionDisplay = document.getElementById('player-question-display'); const playerMessageArea = document.getElementById('player-message-area'); const playerMessageInput = document.getElementById('player-message-input'); const playerClueList = document.getElementById('player-clue-list');
+        const hostDownloadBtn = document.getElementById('host-download-btn'); const playerDownloadBtn = document.getElementById('player-download-btn');
         
         function renderClues(clues) {
             hostClueList.innerHTML = ''; playerClueList.innerHTML = '';
@@ -86,13 +90,60 @@
                 const trashIcon = `<svg class="clue-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
                 hostLi.innerHTML = `<span class="clue-text">${clue.text}</span><div class="clue-actions"><button class="highlight-btn" title="着重" onclick="toggleHighlightClue('${clue.id}')">${starIcon}</button><button class="delete-btn" title="删除" onclick="deleteClue('${clue.id}')">${trashIcon}</button></div>`;
                 hostClueList.appendChild(hostLi);
-                
-                // BUG 2 FIX: 确保玩家列表项也正确应用高亮样式
                 const playerLi = document.createElement('li');
                 playerLi.className = `clue-item ${clue.highlighted ? 'highlighted' : ''}`;
                 playerLi.innerHTML = `<span class="clue-text">${clue.text}</span>`;
                 playerClueList.appendChild(playerLi);
             });
+        }
+
+        function generateReviewText() {
+            let content = "海龟汤游戏复盘\n";
+            content += "====================\n\n";
+            
+            content += "【本局汤面】\n";
+            content += (questionInput.value || "无") + "\n\n";
+            
+            content += "【问答记录】\n";
+            const messages = document.querySelectorAll('#player-message-area .message');
+            if (messages.length > 0) {
+                messages.forEach(msg => {
+                    const sender = msg.querySelector('.message-sender').textContent;
+                    const text = msg.childNodes[1].nodeValue.trim();
+                    content += `${sender}: ${text}\n`;
+                });
+            } else {
+                content += "无\n";
+            }
+            content += "\n";
+
+            content += "【最终线索】\n";
+            const clues = document.querySelectorAll('#player-clue-list .clue-item');
+            if (clues.length > 0) {
+                clues.forEach((clue, index) => {
+                    const isHighlighted = clue.classList.contains('highlighted');
+                    const text = clue.querySelector('.clue-text').textContent;
+                    content += `${index + 1}. ${text} ${isHighlighted ? '(★重点)' : ''}\n`;
+                });
+            } else {
+                content += "无\n";
+            }
+            content += "\n====================\n";
+            content += "生成于海龟汤在线小屋";
+            return content;
+        }
+
+        function downloadReview() {
+            const text = generateReviewText();
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '海龟汤复盘.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
         function createMessageElement(data) { const { text, sender, role } = data; const className = role === 'host' ? 'host-msg' : 'player-msg'; const msgDiv = document.createElement('div'); msgDiv.classList.add('message', className); const senderSpan = document.createElement('div'); senderSpan.classList.add('message-sender'); senderSpan.textContent = sender; msgDiv.appendChild(senderSpan); msgDiv.appendChild(document.createTextNode(text)); return msgDiv; }
@@ -101,35 +152,42 @@
         function sendMessage(senderRole) { const input = senderRole === 'host' ? hostMessageInput : playerMessageInput; const text = input.value.trim(); if (!text) return; const senderName = senderRole === 'host' ? '主持人' : '玩家'; socket.emit('sendMessage', { text, sender: senderName, role: senderRole }); input.value = ''; }
         function quickReply(text) { socket.emit('sendMessage', { text, sender: '主持人', role: 'host' }); }
         function addClue(text) { socket.emit('addClue', text); } function deleteClue(clueId) { socket.emit('deleteClue', clueId); } function toggleHighlightClue(clueId) { socket.emit('toggleHighlightClue', clueId); } function announceResult(result) { socket.emit('announceResult', result); } function resetGame() { socket.emit('resetGame'); }
-        socket.on('roleConfirmed', (role) => { myRole = role; roleSelectionView.classList.add('fade-out'); setTimeout(() => { roleSelectionView.style.display = 'none'; if (myRole === 'host') hostView.style.display = 'grid'; else playerView.style.display = 'grid'; }, 500); });
+        
+        socket.on('roleConfirmed', (role) => { 
+            myRole = role; 
+            // 每次进入新游戏时，禁用下载按钮
+            hostDownloadBtn.disabled = true;
+            playerDownloadBtn.disabled = true;
+            roleSelectionView.classList.add('fade-out'); 
+            setTimeout(() => { roleSelectionView.style.display = 'none'; if (myRole === 'host') hostView.style.display = 'grid'; else playerView.style.display = 'grid'; }, 500); 
+        });
+
         socket.on('gameStateSync', (state) => { playerQuestionDisplay.textContent = state.question; questionInput.value = state.question; renderClues(state.clues); });
         socket.on('questionUpdated', (question) => { playerQuestionDisplay.textContent = question; questionInput.value = question; });
         socket.on('newMessage', (data) => { appendLocalMessage(data); });
         socket.on('cluesUpdated', (clues) => { renderClues(clues); });
-        socket.on('resultAnnounced', (result) => { const resultText = `--- 游戏结束，主持人宣布：喝汤${result}！ ---`; const className = result === '成功' ? 'success' : 'fail'; const systemMsg = document.createElement('div'); systemMsg.className = `system-message ${className}`; systemMsg.textContent = resultText; hostMessageArea.appendChild(systemMsg.cloneNode(true)); playerMessageArea.appendChild(systemMsg.cloneNode(true)); hostMessageArea.scrollTop = hostMessageArea.scrollHeight; playerMessageArea.scrollTop = playerMessageArea.scrollHeight; btnSuccess.classList.add('hidden'); btnFail.classList.add('hidden'); btnReset.classList.remove('hidden'); });
         
-        // BUG 1 FIX: 在重置事件中，增加清空题目区域的代码
+        socket.on('resultAnnounced', (result) => { 
+            const resultText = `--- 游戏结束，主持人宣布：喝汤${result}！ ---`; const className = result === '成功' ? 'success' : 'fail'; const systemMsg = document.createElement('div'); systemMsg.className = `system-message ${className}`; systemMsg.textContent = resultText; hostMessageArea.appendChild(systemMsg.cloneNode(true)); playerMessageArea.appendChild(systemMsg.cloneNode(true)); hostMessageArea.scrollTop = hostMessageArea.scrollHeight; playerMessageArea.scrollTop = playerMessageArea.scrollHeight; 
+            btnSuccess.classList.add('hidden'); btnFail.classList.add('hidden'); btnReset.classList.remove('hidden'); 
+            // 游戏结束，启用下载按钮
+            hostDownloadBtn.disabled = false;
+            playerDownloadBtn.disabled = false;
+        });
+        
         socket.on('gameReset', () => { 
-            hostMessageArea.innerHTML = ''; 
-            playerMessageArea.innerHTML = ''; 
-            hostClueList.innerHTML = ''; 
-            playerClueList.innerHTML = ''; 
-            
-            // --- 新增的修复代码 ---
+            hostMessageArea.innerHTML = ''; playerMessageArea.innerHTML = ''; hostClueList.innerHTML = ''; playerClueList.innerHTML = ''; 
+            // BUG 1 FIX: 增加清空汤面和手册的代码
             questionInput.value = ''; 
+            manualInput.value = '';
             playerQuestionDisplay.textContent = '主持人尚未出题...'; 
-            // --- 修复代码结束 ---
-
-            btnSuccess.classList.remove('hidden'); 
-            btnFail.classList.remove('hidden'); 
-            btnReset.classList.add('hidden'); 
-            hostView.style.display = 'none'; 
-            playerView.style.display = 'none'; 
-            roleSelectionView.style.display = 'flex'; 
+            btnSuccess.classList.remove('hidden'); btnFail.classList.remove('hidden'); btnReset.classList.add('hidden'); 
+            hostView.style.display = 'none'; playerView.style.display = 'none'; roleSelectionView.style.display = 'flex'; 
             setTimeout(() => roleSelectionView.classList.remove('fade-out'), 50); 
         });
 
         document.getElementById('host-btn').addEventListener('click', () => selectRole('host')); document.getElementById('player-btn').addEventListener('click', () => selectRole('player')); questionInput.addEventListener('input', (e) => socket.emit('updateQuestion', e.target.value)); btnSuccess.addEventListener('click', () => announceResult('成功')); btnFail.addEventListener('click', () => announceResult('失败')); btnReset.addEventListener('click', resetGame); document.getElementById('host-send-btn').addEventListener('click', () => sendMessage('host')); document.getElementById('player-send-btn').addEventListener('click', () => sendMessage('player')); hostMessageInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage('host'); }); playerMessageInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage('player'); });
+        hostDownloadBtn.addEventListener('click', downloadReview); playerDownloadBtn.addEventListener('click', downloadReview);
         function switchTab(view, tabName) { const tabs = document.querySelectorAll(`#${view}-view .tab-btn`); const contents = document.querySelectorAll(`#${view}-view .tab-content`); tabs.forEach(tab => tab.classList.remove('active')); contents.forEach(content => content.classList.remove('active')); document.querySelector(`#${view}-view .tab-btn[onclick*="'${tabName}'"]`).classList.add('active'); document.getElementById(`${view}-${tabName}-content`).classList.add('active'); }
     </script>
 </body>
