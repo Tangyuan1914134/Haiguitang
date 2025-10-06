@@ -88,66 +88,107 @@
     <div id="player-view" class="game-container"><div id="player-left-panel" class="panel"><h3 class="panel-title">海龟汤题目</h3><div id="player-question-display" style="font-size: 1.1em; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; flex-grow: 1;">主持人尚未出题...</div></div><div id="player-middle-panel" class="panel"><h3 class="panel-title">提问区</h3><div id="player-message-area" class="message-area"></div><div class="panel-footer"><div class="input-area"><input type="text" id="player-message-input" class="message-input" placeholder="向主持人提问..."><button id="player-send-btn" class="send-btn">发送</button></div></div></div><div id="player-right-panel" class="panel"><h3 class="panel-title">线索列表</h3><ul id="player-clue-list" class="clue-list"></ul><button id="player-download-btn" class="download-btn" disabled>下载本局复盘</button></div></div>
     <div id="mobile-nav"><button id="mobile-nav-topic" class="mobile-nav-btn"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg><span>汤面</span></button><button id="mobile-nav-chat" class="mobile-nav-btn active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg><span>聊天</span></button><button id="mobile-nav-clues" class="mobile-nav-btn"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 18h12v-2H3v2zm0-5h18v-2H3v2zm0-5h18V6H3v2zm15 10l-4-4 4-4v8z"/></svg><span>线索</span></button></div>
     
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io("https://hgtang.onrender.com", { transports: ["websocket"] });
-        let myRole = null;
-        let myName = null;
-        let currentRoomID = null;
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    // --- 变量定义 (保持不变) ---
+    const socket = io("https://hgtang.onrender.com", { transports: ["websocket"] });
+    let myRole = null;
+    let myName = null;
+    let currentRoomID = null;
 
-        const roomSelectionView = document.getElementById('room-selection-view'); const roleSelectionView = document.getElementById('role-selection-view'); const roomInput = document.getElementById('room-input'); const joinRoomBtn = document.getElementById('join-room-btn'); const hostBtn = document.getElementById('host-btn'); const playerBtn = document.getElementById('player-btn');
-        const hostView = document.getElementById('host-view'); const playerView = document.getElementById('player-view'); const questionInput = document.getElementById('question-input'); const manualInput = document.getElementById('manual-input'); const hostMessageArea = document.getElementById('host-message-area'); const hostMessageInput = document.getElementById('host-message-input'); const hostClueList = document.getElementById('host-clue-list'); const btnSuccess = document.getElementById('btn-success'); const btnFail = document.getElementById('btn-fail'); const btnReset = document.getElementById('btn-reset'); const playerQuestionDisplay = document.getElementById('player-question-display'); const playerMessageArea = document.getElementById('player-message-area'); const playerMessageInput = document.getElementById('player-message-input'); const playerClueList = document.getElementById('player-clue-list');
-        const hostDownloadBtn = document.getElementById('host-download-btn'); const playerDownloadBtn = document.getElementById('player-download-btn');
-        const mobileNav = document.getElementById('mobile-nav'); const mobileNavTopicBtn = document.getElementById('mobile-nav-topic'); const mobileNavChatBtn = document.getElementById('mobile-nav-chat'); const mobileNavCluesBtn = document.getElementById('mobile-nav-clues'); const hostPanels = [document.getElementById('host-left-panel'), document.getElementById('host-middle-panel'), document.getElementById('host-right-panel')]; const playerPanels = [document.getElementById('player-left-panel'), document.getElementById('player-middle-panel'), document.getElementById('player-right-panel')]; const mobileNavBtns = [mobileNavTopicBtn, mobileNavChatBtn, mobileNavCluesBtn];
+    const roomSelectionView = document.getElementById('room-selection-view'); const roleSelectionView = document.getElementById('role-selection-view'); const roomInput = document.getElementById('room-input'); const joinRoomBtn = document.getElementById('join-room-btn'); const hostBtn = document.getElementById('host-btn'); const playerBtn = document.getElementById('player-btn');
+    const hostView = document.getElementById('host-view'); const playerView = document.getElementById('player-view'); const questionInput = document.getElementById('question-input'); const manualInput = document.getElementById('manual-input'); const hostMessageArea = document.getElementById('host-message-area'); const hostMessageInput = document.getElementById('host-message-input'); const hostClueList = document.getElementById('host-clue-list'); const btnSuccess = document.getElementById('btn-success'); const btnFail = document.getElementById('btn-fail'); const btnReset = document.getElementById('btn-reset'); const playerQuestionDisplay = document.getElementById('player-question-display'); const playerMessageArea = document.getElementById('player-message-area'); const playerMessageInput = document.getElementById('player-message-input'); const playerClueList = document.getElementById('player-clue-list');
+    const hostDownloadBtn = document.getElementById('host-download-btn'); const playerDownloadBtn = document.getElementById('player-download-btn');
+    const mobileNav = document.getElementById('mobile-nav'); const mobileNavTopicBtn = document.getElementById('mobile-nav-topic'); const mobileNavChatBtn = document.getElementById('mobile-nav-chat'); const mobileNavCluesBtn = document.getElementById('mobile-nav-clues'); const hostPanels = [document.getElementById('host-left-panel'), document.getElementById('host-middle-panel'), document.getElementById('host-right-panel')]; const playerPanels = [document.getElementById('player-left-panel'), document.getElementById('player-middle-panel'), document.getElementById('player-right-panel')]; const mobileNavBtns = [mobileNavTopicBtn, mobileNavChatBtn, mobileNavCluesBtn];
 
-        function renderClues(clues) { hostClueList.innerHTML = ''; playerClueList.innerHTML = ''; clues.forEach(clue => { const hostLi = document.createElement('li'); hostLi.className = `clue-item ${clue.highlighted ? 'highlighted' : ''}`; const starIcon = `<svg class="clue-icon" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`; const trashIcon = `<svg class="clue-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`; hostLi.innerHTML = `<span class="clue-text">${clue.text}</span><div class="clue-actions"><button class="highlight-btn" title="着重" onclick="toggleHighlightClue('${clue.id}')">${starIcon}</button><button class="delete-btn" title="删除" onclick="deleteClue('${clue.id}')">${trashIcon}</button></div>`; hostClueList.appendChild(hostLi); const playerLi = document.createElement('li'); playerLi.className = `clue-item ${clue.highlighted ? 'highlighted' : ''}`; playerLi.innerHTML = `<span class="clue-text">${clue.text}</span>`; playerClueList.appendChild(playerLi); }); }
-        function generateReviewText() { let content = "海龟汤游戏复盘\n====================\n\n【本局汤面】\n" + (questionInput.value || "无") + "\n\n【问答记录】\n"; const messages = document.querySelectorAll('#player-message-area .message'); if (messages.length > 0) { messages.forEach(msg => { const sender = msg.querySelector('.message-sender').textContent; const text = msg.childNodes[1].nodeValue.trim(); content += `${sender}: ${text}\n`; }); } else { content += "无\n"; } content += "\n【最终线索】\n"; const clues = document.querySelectorAll('#player-clue-list .clue-item'); if (clues.length > 0) { clues.forEach((clue, index) => { const isHighlighted = clue.classList.contains('highlighted'); const text = clue.querySelector('.clue-text').textContent; content += `${index + 1}. ${text} ${isHighlighted ? '(★重点)' : ''}\n`; }); } else { content += "无\n"; } content += "\n====================\n生成于海龟汤在线小屋"; return content; }
-        function downloadReview() { const text = generateReviewText(); const blob = new Blob([text], { type: 'text/plain;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = '海龟汤复盘.txt'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
-        function createMessageElement(data) { const { text, sender, role } = data; const className = role === 'system' ? 'system-msg' : (role === 'host' ? 'host-msg' : 'player-msg'); const msgDiv = document.createElement('div'); msgDiv.classList.add('message', className); if(role !== 'system') { const senderSpan = document.createElement('div'); senderSpan.classList.add('message-sender'); senderSpan.textContent = sender; msgDiv.appendChild(senderSpan); } msgDiv.appendChild(document.createTextNode(text)); return msgDiv; }
-        function appendLocalMessage(data) { const hostMsgDiv = createMessageElement(data); if (myRole === 'host' && data.role === 'player') { hostMsgDiv.title = '点击加入线索列表'; hostMsgDiv.onclick = () => addClue(data.text); } hostMessageArea.appendChild(hostMsgDiv); hostMessageArea.scrollTop = hostMessageArea.scrollHeight; const playerMsgDiv = createMessageElement(data); playerMessageArea.appendChild(playerMsgDiv); playerMessageArea.scrollTop = playerMessageArea.scrollHeight; }
-        function renderChatHistory(history) { hostMessageArea.innerHTML = ''; playerMessageArea.innerHTML = ''; history.forEach(msgData => appendLocalMessage(msgData)); }
-        function switchToMobilePanel(panelIndex) { const panels = (myRole === 'host') ? hostPanels : playerPanels; panels.forEach(p => p.classList.remove('mobile-visible')); panels[panelIndex].classList.add('mobile-visible'); mobileNavBtns.forEach(b => b.classList.remove('active')); mobileNavBtns[panelIndex].classList.add('active'); }
-        function switchTab(view, tabName) { const tabs = document.querySelectorAll(`#${view}-view .tab-btn`); const contents = document.querySelectorAll(`#${view}-view .tab-content`); tabs.forEach(tab => tab.classList.remove('active')); contents.forEach(content => content.classList.remove('active')); document.querySelector(`#${view}-view .tab-btn[onclick*="'${tabName}'"]`).classList.add('active'); document.getElementById(`${view}-${tabName}-content`).classList.add('active'); }
-        function transitionToView(view, isFadeIn = true) { const allViews = [document.getElementById('room-selection-view'), roleSelectionView, hostView, playerView]; allViews.forEach(v => v.classList.add('fade-out')); setTimeout(() => { allViews.forEach(v => v.style.display = 'none'); const targetView = document.getElementById(view); if (targetView) { targetView.style.display = (view.includes('-view')) ? 'flex' : 'grid'; if(isFadeIn) { setTimeout(() => targetView.classList.remove('fade-out'), 10); } if ((view === 'host-view' || view === 'player-view')) { if (window.innerWidth <= 768) { mobileNav.style.display = 'flex'; switchToMobilePanel(1); } else { mobileNav.style.display = 'none'; } } else { mobileNav.style.display = 'none'; } } }, 500); }
-        
-        joinRoomBtn.addEventListener('click', () => { const roomID = roomInput.value.trim(); if (roomID) { currentRoomID = roomID; socket.emit('joinRoom', roomID); } });
-        roomInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') joinRoomBtn.click(); });
-        hostBtn.addEventListener('click', () => { hostBtn.disabled = true; hostBtn.textContent = '请求中...'; socket.emit('selectRole', { roomID: currentRoomID, role: 'host' }); });
-        playerBtn.addEventListener('click', () => { playerBtn.disabled = true; playerBtn.textContent = '请求中...'; socket.emit('selectRole', { roomID: currentRoomID, role: 'player' }); });
-        
-        socket.on('joinSuccess', ({ hasHost }) => { transitionToView('role-selection-view', false); roleSelectionView.classList.remove('hidden'); hostBtn.disabled = hasHost; hostBtn.textContent = '我是主持人'; playerBtn.disabled = false; playerBtn.textContent = '我是玩家'; });
-        socket.on('hostUpdate', (hasHost) => { hostBtn.disabled = hasHost; });
-        socket.on('roleConfirmed', (role) => { myRole = role; transitionToView(role === 'host' ? 'host-view' : 'player-view'); });
-        socket.on('roleRejected', (role) => { if (role === 'host') { alert("该房间已经有主持人了！"); hostBtn.disabled = true; hostBtn.textContent = '我是主持人'; } });
-        socket.on('gameStateSync', (roomState) => { myName = roomState.myName; questionInput.value = roomState.question; playerQuestionDisplay.textContent = roomState.question; renderClues(roomState.clues); renderChatHistory(roomState.chatHistory); });
-        
-        function sendMessage(senderRole) { const input = senderRole === 'host' ? hostMessageInput : playerMessageInput; const text = input.value.trim(); if (!text) return; socket.emit('sendMessage', { roomID: currentRoomID, messageData: { text, sender: myName, role: senderRole } }); input.value = ''; }
-        function quickReply(text) { socket.emit('sendMessage', { roomID: currentRoomID, messageData: { text, sender: '主持人', role: 'host' } }); }
-        function addClue(text) { socket.emit('addClue', { roomID: currentRoomID, clueText: text }); }
-        function deleteClue(clueId) { socket.emit('deleteClue', { roomID: currentRoomID, clueId }); }
-        function toggleHighlightClue(clueId) { socket.emit('toggleHighlightClue', { roomID: currentRoomID, clueId }); }
-        function announceResult(result) { socket.emit('announceResult', { roomID: currentRoomID, result }); }
-        function resetGame() { socket.emit('resetGame', currentRoomID); }
-        
-        socket.on('questionUpdated', (question) => { questionInput.value = question; playerQuestionDisplay.textContent = question; });
-        socket.on('newMessage', (data) => { appendLocalMessage(data); });
-        socket.on('cluesUpdated', (clues) => { renderClues(clues); });
-        socket.on('resultAnnounced', (result) => { const resultText = `--- 游戏结束，主持人宣布：喝汤${result}！ ---`; const systemMsg = document.createElement('div'); systemMsg.className = `system-message ${result === '成功' ? 'success' : 'fail'}`; systemMsg.textContent = resultText; hostMessageArea.appendChild(systemMsg.cloneNode(true)); playerMessageArea.appendChild(systemMsg.cloneNode(true)); hostMessageArea.scrollTop = hostMessageArea.scrollHeight; playerMessageArea.scrollTop = playerMessageArea.scrollHeight; btnSuccess.classList.add('hidden'); btnFail.classList.add('hidden'); btnReset.classList.remove('hidden'); hostDownloadBtn.disabled = false; playerDownloadBtn.disabled = false; });
-        socket.on('gameReset', () => { alert("本局游戏已被主持人重置或主持人已离开！"); window.location.reload(); });
-        
-        questionInput.addEventListener('input', (e) => socket.emit('updateQuestion', { roomID: currentRoomID, questionText: e.target.value }));
-        btnSuccess.addEventListener('click', () => announceResult('成功'));
-        btnFail.addEventListener('click', () => announceResult('失败'));
-        btnReset.addEventListener('click', resetGame);
-        document.getElementById('host-send-btn').addEventListener('click', () => sendMessage('host'));
-        document.getElementById('player-send-btn').addEventListener('click', () => sendMessage('player'));
-        hostMessageInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage('host'); });
-        playerMessageInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage('player'); });
-        hostDownloadBtn.addEventListener('click', downloadReview);
-        playerDownloadBtn.addEventListener('click', downloadReview);
-        mobileNavTopicBtn.addEventListener('click', () => switchToMobilePanel(0));
-        mobileNavChatBtn.addEventListener('click', () => switchToMobilePanel(1));
-        mobileNavCluesBtn.addEventListener('click', () => switchToMobilePanel(2));
-    </script>
+    // --- 核心功能函数 (保持不变) ---
+    function renderClues(clues) { hostClueList.innerHTML = ''; playerClueList.innerHTML = ''; clues.forEach(clue => { const hostLi = document.createElement('li'); hostLi.className = `clue-item ${clue.highlighted ? 'highlighted' : ''}`; const starIcon = `<svg class="clue-icon" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>`; const trashIcon = `<svg class="clue-icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`; hostLi.innerHTML = `<span class="clue-text">${clue.text}</span><div class="clue-actions"><button class="highlight-btn" title="着重" onclick="toggleHighlightClue('${clue.id}')">${starIcon}</button><button class="delete-btn" title="删除" onclick="deleteClue('${clue.id}')">${trashIcon}</button></div>`; hostClueList.appendChild(hostLi); const playerLi = document.createElement('li'); playerLi.className = `clue-item ${clue.highlighted ? 'highlighted' : ''}`; playerLi.innerHTML = `<span class="clue-text">${clue.text}</span>`; playerClueList.appendChild(playerLi); }); }
+    function generateReviewText() { let content = "海龟汤游戏复盘\n====================\n\n【本局汤面】\n" + (questionInput.value || "无") + "\n\n【问答记录】\n"; const messages = document.querySelectorAll('#player-message-area .message'); if (messages.length > 0) { messages.forEach(msg => { const sender = msg.querySelector('.message-sender').textContent; const text = msg.childNodes[1].nodeValue.trim(); content += `${sender}: ${text}\n`; }); } else { content += "无\n"; } content += "\n【最终线索】\n"; const clues = document.querySelectorAll('#player-clue-list .clue-item'); if (clues.length > 0) { clues.forEach((clue, index) => { const isHighlighted = clue.classList.contains('highlighted'); const text = clue.querySelector('.clue-text').textContent; content += `${index + 1}. ${text} ${isHighlighted ? '(★重点)' : ''}\n`; }); } else { content += "无\n"; } content += "\n====================\n生成于海龟汤在线小屋"; return content; }
+    function downloadReview() { const text = generateReviewText(); const blob = new Blob([text], { type: 'text/plain;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = '海龟汤复盘.txt'; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
+    function createMessageElement(data) { const { text, sender, role } = data; const className = role === 'system' ? 'system-msg' : (role === 'host' ? 'host-msg' : 'player-msg'); const msgDiv = document.createElement('div'); msgDiv.classList.add('message', className); if(role !== 'system') { const senderSpan = document.createElement('div'); senderSpan.classList.add('message-sender'); senderSpan.textContent = sender; msgDiv.appendChild(senderSpan); } msgDiv.appendChild(document.createTextNode(text)); return msgDiv; }
+    function appendLocalMessage(data) { const hostMsgDiv = createMessageElement(data); if (myRole === 'host' && data.role === 'player') { hostMsgDiv.title = '点击加入线索列表'; hostMsgDiv.onclick = () => addClue(data.text); } hostMessageArea.appendChild(hostMsgDiv); hostMessageArea.scrollTop = hostMessageArea.scrollHeight; const playerMsgDiv = createMessageElement(data); playerMessageArea.appendChild(playerMsgDiv); playerMessageArea.scrollTop = playerMessageArea.scrollHeight; }
+    function renderChatHistory(history) { hostMessageArea.innerHTML = ''; playerMessageArea.innerHTML = ''; history.forEach(msgData => appendLocalMessage(msgData)); }
+    function switchToMobilePanel(panelIndex) { const panels = (myRole === 'host') ? hostPanels : playerPanels; panels.forEach(p => p.classList.remove('mobile-visible')); panels[panelIndex].classList.add('mobile-visible'); mobileNavBtns.forEach(b => b.classList.remove('active')); mobileNavBtns[panelIndex].classList.add('active'); }
+    function switchTab(view, tabName) { const tabs = document.querySelectorAll(`#${view}-view .tab-btn`); const contents = document.querySelectorAll(`#${view}-view .tab-content`); tabs.forEach(tab => tab.classList.remove('active')); contents.forEach(content => content.classList.remove('active')); document.querySelector(`#${view}-view .tab-btn[onclick*="'${tabName}'"]`).classList.add('active'); document.getElementById(`${view}-${tabName}-content`).classList.add('active'); }
+
+    // --- 视图切换函数 (已修复和优化) ---
+    function transitionToView(viewId) {
+        const allViews = [roomSelectionView, roleSelectionView, hostView, playerView];
+        const targetView = document.getElementById(viewId);
+
+        // 1. 先隐藏所有视图
+        allViews.forEach(v => {
+            v.style.display = 'none';
+        });
+
+        if (targetView) {
+            // 2. 根据视图类型，设置正确的 display 属性
+            // BUG修复：修正了视图切换的 display 逻辑
+            const isGameView = viewId === 'host-view' || viewId === 'player-view';
+            targetView.style.display = isGameView ? 'grid' : 'flex';
+
+            // 3. 处理移动端导航和面板显示
+            if (isGameView) {
+                if (window.innerWidth <= 768) {
+                    mobileNav.style.display = 'flex';
+                    // 默认显示中间的聊天面板
+                    switchToMobilePanel(1); 
+                } else {
+                    mobileNav.style.display = 'none';
+                }
+            } else {
+                mobileNav.style.display = 'none';
+            }
+        }
+    }
+
+    // --- 事件监听器 (保持不变) ---
+    joinRoomBtn.addEventListener('click', () => { const roomID = roomInput.value.trim(); if (roomID) { currentRoomID = roomID; socket.emit('joinRoom', roomID); } });
+    roomInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') joinRoomBtn.click(); });
+    hostBtn.addEventListener('click', () => { hostBtn.disabled = true; hostBtn.textContent = '请求中...'; socket.emit('selectRole', { roomID: currentRoomID, role: 'host' }); });
+    playerBtn.addEventListener('click', () => { playerBtn.disabled = true; playerBtn.textContent = '请求中...'; socket.emit('selectRole', { roomID: currentRoomID, role: 'player' }); });
+    
+    // --- Socket.IO 事件处理 (使用修复后的 transitionToView) ---
+    socket.on('joinSuccess', ({ hasHost }) => {
+        transitionToView('role-selection-view'); // 直接调用新函数
+        hostBtn.disabled = hasHost;
+        hostBtn.textContent = '我是主持人';
+        playerBtn.disabled = false;
+        playerBtn.textContent = '我是玩家';
+    });
+    socket.on('hostUpdate', (hasHost) => { hostBtn.disabled = hasHost; });
+    socket.on('roleConfirmed', (role) => { myRole = role; transitionToView(role === 'host' ? 'host-view' : 'player-view'); });
+    socket.on('roleRejected', (role) => { if (role === 'host') { alert("该房间已经有主持人了！"); hostBtn.disabled = true; hostBtn.textContent = '我是主持人'; } });
+    socket.on('gameStateSync', (roomState) => { myName = roomState.myName; questionInput.value = roomState.question; playerQuestionDisplay.textContent = roomState.question; renderClues(roomState.clues); renderChatHistory(roomState.chatHistory); });
+    
+    // --- 更多功能函数和事件监听 (保持不变) ---
+    function sendMessage(senderRole) { const input = senderRole === 'host' ? hostMessageInput : playerMessageInput; const text = input.value.trim(); if (!text) return; socket.emit('sendMessage', { roomID: currentRoomID, messageData: { text, sender: myName, role: senderRole } }); input.value = ''; }
+    function quickReply(text) { socket.emit('sendMessage', { roomID: currentRoomID, messageData: { text, sender: '主持人', role: 'host' } }); }
+    function addClue(text) { socket.emit('addClue', { roomID: currentRoomID, clueText: text }); }
+    function deleteClue(clueId) { socket.emit('deleteClue', { roomID: currentRoomID, clueId }); }
+    function toggleHighlightClue(clueId) { socket.emit('toggleHighlightClue', { roomID: currentRoomID, clueId }); }
+    function announceResult(result) { socket.emit('announceResult', { roomID: currentRoomID, result }); }
+    function resetGame() { socket.emit('resetGame', currentRoomID); }
+    
+    socket.on('questionUpdated', (question) => { questionInput.value = question; playerQuestionDisplay.textContent = question; });
+    socket.on('newMessage', (data) => { appendLocalMessage(data); });
+    socket.on('cluesUpdated', (clues) => { renderClues(clues); });
+    socket.on('resultAnnounced', (result) => { const resultText = `--- 游戏结束，主持人宣布：喝汤${result}！ ---`; const systemMsg = document.createElement('div'); systemMsg.className = `system-message ${result === '成功' ? 'success' : 'fail'}`; systemMsg.textContent = resultText; hostMessageArea.appendChild(systemMsg.cloneNode(true)); playerMessageArea.appendChild(systemMsg.cloneNode(true)); hostMessageArea.scrollTop = hostMessageArea.scrollHeight; playerMessageArea.scrollTop = playerMessageArea.scrollHeight; btnSuccess.classList.add('hidden'); btnFail.classList.add('hidden'); btnReset.classList.remove('hidden'); hostDownloadBtn.disabled = false; playerDownloadBtn.disabled = false; });
+    socket.on('gameReset', () => { alert("本局游戏已被主持人重置或主持人已离开！"); window.location.reload(); });
+    
+    questionInput.addEventListener('input', (e) => socket.emit('updateQuestion', { roomID: currentRoomID, questionText: e.target.value }));
+    btnSuccess.addEventListener('click', () => announceResult('成功'));
+    btnFail.addEventListener('click', () => announceResult('失败'));
+    btnReset.addEventListener('click', resetGame);
+    document.getElementById('host-send-btn').addEventListener('click', () => sendMessage('host'));
+    document.getElementById('player-send-btn').addEventListener('click', () => sendMessage('player'));
+    hostMessageInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage('host'); });
+    playerMessageInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendMessage('player'); });
+    hostDownloadBtn.addEventListener('click', downloadReview);
+    playerDownloadBtn.addEventListener('click', downloadReview);
+    mobileNavTopicBtn.addEventListener('click', () => switchToMobilePanel(0));
+    mobileNavChatBtn.addEventListener('click', () => switchToMobilePanel(1));
+    mobileNavCluesBtn.addEventListener('click', () => switchToMobilePanel(2));
+</script>
 </body>
 </html>
